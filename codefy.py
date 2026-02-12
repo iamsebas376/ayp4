@@ -1,10 +1,18 @@
-# Aplicación que simule plataformas de spotify con listas, donde:
-# - Pueda agregar o eliminar canciones en cualquier parte de la lista
-# - Pueda reproducir la canción que quiera (Por nombre, genero, artista, albúm, año, siguiente, anterior, última, primera)
-# - Tenga buscador de canciones
-# - Duración de la canción
-# - Modo aleatorio
-# - Repetir lista
+# Aplicación que simule plataformas tipo Spotify con listas, donde:
+# 1. [X] Interfaz de usuario simple por consola
+# 2. [X] Menú interactivo para seleccionar acciones
+# 3. [ ] Agregar canciones en cualquier parte de la lista
+# 3. [X] Eliminar canciones en cualquier parte de la lista
+# 4. [ ] Validar datos al agregar canciones (campos obligatorios, tipos)
+# 5. [ ] Permitir editar información de una canción
+# 6. [X] Mostrar todas las canciones en formato de lista
+# 7. [ ] Implementar buscador de canciones
+# 8. [ ] Reproducir canción por diferentes criterios (por nombre, género, artista, álbum, año, siguiente, anterior, última, primera)
+# 9. [X] Mostrar duración de la canción
+# 10. [ ] Agregar modo aleatorio de reproducción
+# 11. [ ] Agregar opción de repetir lista
+# 12. [ ] Guardar y cargar la lista de canciones desde archivo
+
 
 class Cancion:
     def __init__(self, nombre, artista, genero, album, anio, duracion):
@@ -31,104 +39,112 @@ class ListaDoble:
 
     def esta_vacia(self):
         return self.cabeza is None
-    
-    def insertar_inicio(self, dato):
-        nodoNuevo = Node(dato)
 
+    def insertar_final(self, cancion):
+        nuevo = Node(cancion)
         if self.esta_vacia():
-            self.cabeza = nodoNuevo
-            self.cola = nodoNuevo
+            self.cabeza = nuevo
+            self.cola = nuevo
         else:
-            nodoNuevo.siguiente = self.cabeza
-            self.cabeza.anterior = nodoNuevo
-            self.cabeza = nodoNuevo
+            self.cola.siguiente = nuevo
+            nuevo.anterior = self.cola
+            self.cola = nuevo
 
-    def insertar_final(self, dato):
-        nodoNuevo = Node(dato)
-
-        if self.esta_vacia():
-            self.cabeza = nodoNuevo
-            self.cola = nodoNuevo
-        else:
-            self.cola.siguiente = nodoNuevo
-            nodoNuevo.anterior = self.cola
-            self.cola = nodoNuevo
-
-    def eliminar_inicio(self):
-        if self.esta_vacia():
-            return None
-        
-        if self.cabeza.dato == self.cola.dato:
-            self.cabeza = None
-            self.cola = None
-        else:
-            self.cabeza = self.cabeza.siguiente
-            self.cabeza.anterior = None
-
-    def eliminar_final(self):
-        if self.esta_vacia():
-            return None
-
-        if self.cabeza.dato == self.cola.dato:
-            self.cabeza = None
-            self.cola = None
-        else:
-            self.cola = self.cola.anterior
-            self.cola.siguiente = None
-
-    def eliminar_especifico(self, dato):
-        if self.esta_vacia():
-            return None
-
-    def recorrer_adelante(self):
-        if self.esta_vacia():
-            return "Lista vacia"
-        
-        print("Recorriendo de Inicio a Fin")
+    def eliminar_por_nombre(self, nombre):
         actual = self.cabeza
         while actual:
-            print(actual.dato, end =" -> ")
-            actual = actual.siguiente
-        print("Fin")
-
-    def recorrer_atras(self):
-        if self.esta_vacia():
-            return print ("Lista vacia")
-        
-        print("Recorriendo de Fin a Inicio")
-        actual = self.cola
-        while actual:
-            print(actual.dato, end =" -> ")
-            actual = actual.anterior
-        print("Fin")
-
-    def buscar(self, dato):
-        actual = self.cabeza
-        while actual:
-            if actual.dato == dato:
+            if actual.dato.nombre.lower() == nombre.lower():
+                if actual.anterior:
+                    actual.anterior.siguiente = actual.siguiente
+                else:
+                    self.cabeza = actual.siguiente
+                if actual.siguiente:
+                    actual.siguiente.anterior = actual.anterior
+                else:
+                    self.cola = actual.anterior
                 return True
             actual = actual.siguiente
-
         return False
-        
-    def __len__(self):
-        contador = 0
-        actual = self.cabeza 
+
+    def buscar(self, nombre):
+        actual = self.cabeza
         while actual:
-            contador += 1
+            if actual.dato.nombre.lower() == nombre.lower():
+                return actual.dato
             actual = actual.siguiente
-        return contador
+        return None
 
     def __str__(self):
         if self.esta_vacia():
             return "Lista vacía"
-
         elementos = []
-        actual = self.cabeza 
+        actual = self.cabeza
         while actual:
             elementos.append(str(actual.dato))
             actual = actual.siguiente
         return "\n".join(elementos)
+
+class Reproductor:
+    def __initi__(self):
+        self.lista_canciones = ListaDoble()
+        self.cancion_actual = None
+        self.modo_aleatorio = False
+        self.repetir_lista = False
+
+class InterfazConsola:
+    def __init__(self, lista):
+        self.lista = lista
+
+    def mostrar_menu(self):
+        print("\n--- CODEFY ---")
+        print("1. Mostrar canciones")
+        print("2. Agregar canción")
+        print("3. Eliminar canción")
+        print("4. Buscar canción")
+        print("5. Salir")
+
+    def pedir_datos_cancion(self):
+        nombre = input("Nombre: ")
+        artista = input("Artista: ")
+        genero = input("Género: ")
+        album = input("Álbum: ")
+        anio = input("Año: ")
+        duracion = input("Duración (mm:ss): ")
+        return Cancion(nombre, artista, genero, album, anio, duracion)
+
+    def ejecutar(self):
+        while True:
+            self.mostrar_menu()
+            opcion = input("Selecciona una opción: ")
+
+            if opcion == "1":
+                print("\nLista de canciones:")
+                print(self.lista)
+
+            elif opcion == "2":
+                cancion = self.pedir_datos_cancion()
+                self.lista.insertar_final(cancion)
+                print("Canción agregada.")
+
+            elif opcion == "3":
+                nombre = input("Nombre de la canción a eliminar: ")
+                self.lista.eliminar_especifico(nombre)
+                print("Canción eliminada.")
+
+            elif opcion == "4":
+                nombre = input("Nombre de la canción a buscar: ")
+                cancion = self.lista.buscar(nombre)
+                if cancion:
+                    print("Encontrada:", cancion)
+                else:
+                    print("No se encontró la canción.")
+
+            elif opcion == "5":
+                print("Hasta luego, gracias por usar Codefy!")
+                break
+
+            else:
+                print("Opción no válida.")
 
 lista_canciones = ListaDoble()
 lista_canciones.insertar_final(Cancion("Imagine", "John Lennon", "Rock", "Imagine", 1971, "3:04"))
@@ -136,4 +152,5 @@ lista_canciones.insertar_final(Cancion("Yesterday", "The Beatles", "Pop", "Help!
 lista_canciones.insertar_final(Cancion("Bohemian Rhapsody", "Queen", "Rock", "A Night at the Opera", 1975, "5:55"))
 lista_canciones.insertar_final(Cancion("Billie Jean", "Michael Jackson", "Pop", "Thriller", 1982, "4:54"))
 
-print(lista_canciones)
+if __name__ == "__main__":
+    InterfazConsola(lista_canciones).ejecutar()
