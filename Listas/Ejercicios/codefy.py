@@ -6,12 +6,15 @@
 # 4. [ ] Validar datos al agregar canciones (campos obligatorios, tipos)
 # 5. [ ] Permitir editar información de una canción
 # 6. [X] Mostrar todas las canciones en formato de lista
-# 7. [ ] Implementar buscador de canciones
+# 7. [X] Implementar buscador de canciones
 # 8. [ ] Reproducir canción por diferentes criterios (por nombre, género, artista, álbum, año, siguiente, anterior, última, primera)
-# 9. [X] Mostrar duración de la canción
+# 9. [X] Mostrar duración de la canción1
 # 10. [ ] Agregar modo aleatorio de reproducción
 # 11. [ ] Agregar opción de repetir lista
 # 12. [ ] Guardar y cargar la lista de canciones desde archivo
+# 13. [ ] Siguiente y anterior canción
+# 14. [ ] Duración total de la lista
+# 15. [ ] Cantidad de canciones en la lista
 
 
 class Cancion:
@@ -33,22 +36,28 @@ class Node:
         self.siguiente = None
 
 class ListaDoble:
-    def __init__(self):
+    def __init__(self, nombre):
+        self.nombre = nombre
         self.cabeza = None
         self.cola = None
+        self.actual = None
+        self._cantidad = 0
 
     def esta_vacia(self):
         return self.cabeza is None
 
-    def insertar_final(self, cancion):
+    def agregar_cancion(self, cancion):
         nuevo = Node(cancion)
         if self.esta_vacia():
             self.cabeza = nuevo
             self.cola = nuevo
+            self.actual = nuevo
         else:
-            self.cola.siguiente = nuevo
             nuevo.anterior = self.cola
+            self.cola.siguiente = nuevo
             self.cola = nuevo
+
+        self._cantidad += 1
 
     def eliminar_por_nombre(self, nombre):
         actual = self.cabeza
@@ -64,14 +73,14 @@ class ListaDoble:
                     self.cola = actual.anterior
                 return True
             actual = actual.siguiente
+        self._cantidad -= 1
         return False
 
     def buscar(self, nombre):
-        actual = self.cabeza
-        while actual:
-            if actual.dato.nombre.lower() == nombre.lower():
-                return actual.dato
-            actual = actual.siguiente
+        while self.actual:
+            if self.actual.dato.nombre.lower() == nombre.lower():
+                return self.actual.dato
+            self.actual = self.actual.siguiente
         return None
 
     def __str__(self):
@@ -128,7 +137,7 @@ class InterfazConsola:
 
             elif opcion == "3":
                 nombre = input("Nombre de la canción a eliminar: ")
-                self.lista.eliminar_especifico(nombre)
+                self.lista.eliminar_por_nombre(nombre)
                 print("Canción eliminada.")
 
             elif opcion == "4":
@@ -147,10 +156,10 @@ class InterfazConsola:
                 print("Opción no válida.")
 
 lista_canciones = ListaDoble()
-lista_canciones.insertar_final(Cancion("Imagine", "John Lennon", "Rock", "Imagine", 1971, "3:04"))
-lista_canciones.insertar_final(Cancion("Yesterday", "The Beatles", "Pop", "Help!", 1965, "2:05"))
-lista_canciones.insertar_final(Cancion("Bohemian Rhapsody", "Queen", "Rock", "A Night at the Opera", 1975, "5:55"))
-lista_canciones.insertar_final(Cancion("Billie Jean", "Michael Jackson", "Pop", "Thriller", 1982, "4:54"))
+lista_canciones.agregar_cancion(Cancion("Imagine", "John Lennon", "Rock", "Imagine", 1971, "3:04"))
+lista_canciones.agregar_cancion(Cancion("Yesterday", "The Beatles", "Pop", "Help!", 1965, "2:05"))
+lista_canciones.agregar_cancion(Cancion("Bohemian Rhapsody", "Queen", "Rock", "A Night at the Opera", 1975, "5:55"))
+lista_canciones.agregar_cancion(Cancion("Billie Jean", "Michael Jackson", "Pop", "Thriller", 1982, "4:54"))
 
 if __name__ == "__main__":
     InterfazConsola(lista_canciones).ejecutar()
