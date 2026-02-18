@@ -94,13 +94,11 @@ class ListaDoble:
     def esta_vacia(self):
         return self.cabeza is None
 
-    # Insertar final (versión usando cola es O(1), pero recursiva por ejercicio)
-    # Si usamos recursión pura sin cola:
     def _insertar_final_rec(self, nodo, nuevo):
         if nodo.siguiente is None:
             nodo.siguiente = nuevo
             nuevo.anterior = nodo
-            self.cola = nuevo # Actualizamos cola
+            self.cola = nuevo
             return
         self._insertar_final_rec(nodo.siguiente, nuevo)
 
@@ -111,10 +109,7 @@ class ListaDoble:
             self.cola = nuevo
             self.actual = nuevo
         else:
-            # Opción 1: Usar recursión para llegar al final
             self._insertar_final_rec(self.cabeza, nuevo)
-            # Opción 2: Usar self.cola directo (más eficiente, pero menos "recursivo")
-            # Para fines educativos:
             pass
         self._cantidad += 1
 
@@ -145,12 +140,9 @@ class ListaDoble:
     def insertar_en_posicion(self, cancion, posicion):
         if posicion <= 0:
             self.insertar_inicio(cancion)
-        elif posicion >= self.cantidad(): # Usamos cantidad recursiva
+        elif posicion >= self.cantidad():
             self.insertar_final(cancion)
         else:
-            # Buscar recursivamente la posición
-            # Empezamos en índice 0 (cabeza)
-            # Queremos insertar UNTES del nodo en 'posicion'
             self._insertar_pos_rec(self.cabeza, cancion, 0, posicion)
             self._cantidad += 1
 
@@ -158,7 +150,6 @@ class ListaDoble:
         if not nodo:
             return False
         if nodo.dato.nombre.lower() == nombre.lower():
-            # Eliminar nodo
             if nodo.anterior:
                 nodo.anterior.siguiente = nodo.siguiente
             else:
