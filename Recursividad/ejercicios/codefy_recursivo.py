@@ -1,20 +1,3 @@
-# Aplicación que simule plataformas tipo Spotify con listas, donde:
-# 1. [X] Interfaz de usuario simple por consola
-# 2. [X] Menú interactivo para seleccionar acciones
-# 3. [X] Agregar canciones en cualquier parte de la lista
-# 3. [X] Eliminar canciones en cualquier parte de la lista
-# 4. [X] Validar datos al agregar canciones (campos obligatorios, tipos)
-# 5. [X] Permitir editar información de una canción
-# 6. [X] Mostrar todas las canciones en formato de lista
-# 7. [X] Implementar buscador de canciones
-# 8. [X] Reproducir canción por diferentes criterios (por nombre, género, artista, álbum, año, siguiente, anterior, última, primera)
-# 9. [X] Mostrar duración de la canción
-# 10. [X] Agregar opción de repetir lista
-# 11. [X] Siguiente y anterior canción
-# 12. [X] Duración total de la lista
-# 13. [X] Cantidad de canciones en la lista
-
-
 class Cancion:
     def __init__(self, nombre, artista, genero, album, anio, duracion):
         self.nombre = nombre
@@ -34,23 +17,40 @@ class Node:
         self.siguiente = None
 
 class ListaDoble:
+    def __init__(self, nombre):
+        self.nombre = nombre
+        self.cabeza = None
+        self.cola = None
+        self.actual = None
+        self._cantidad = 0
+
     def repetir_lista(self):
         self.actual = self.cabeza
         return self.actual.dato if self.actual else None
 
+    def _duracion_rec(self, nodo):
+        if not nodo:
+            return 0
+        try:
+            minutos, segundos = map(int, nodo.dato.duracion.split(':'))
+            total = minutos * 60 + segundos
+        except ValueError:
+            total = 0
+        return total + self._duracion_rec(nodo.siguiente)
 
     def duracion_total(self):
-        total_segundos = 0
-        actual = self.cabeza
-        while actual:
-            minutos, segundos = map(int, actual.dato.duracion.split(':'))
-            total_segundos += minutos * 60 + segundos
-            actual = actual.siguiente
+        total_segundos = self._duracion_rec(self.cabeza)
         minutos, segundos = divmod(total_segundos, 60)
         return f"{minutos}:{str(segundos).zfill(2)}"
 
+    def _cantidad_rec(self, nodo):
+        if not nodo:
+            return 0
+        return 1 + self._cantidad_rec(nodo.siguiente)
+
     def cantidad(self):
-        return self._cantidad
+        return self._cantidad_rec(self.cabeza)
+
     def siguiente(self):
         if self.actual and self.actual.siguiente:
             self.actual = self.actual.siguiente
@@ -75,28 +75,34 @@ class ListaDoble:
             return self.actual.dato
         return None
 
+    def _reproducir_por_rec(self, nodo, criterio, valor):
+        if not nodo:
+            return None
+        if getattr(nodo.dato, criterio, '').__str__().lower() == str(valor).lower():
+            self.actual = nodo
+            return nodo.dato
+        return self._reproducir_por_rec(nodo.siguiente, criterio, valor)
+
     def reproducir_por(self, criterio, valor):
-        actual = self.cabeza
-        while actual:
-            if getattr(actual.dato, criterio, '').__str__().lower() == str(valor).lower():
-                self.actual = actual
-                return actual.dato
-            actual = actual.siguiente
-        return None
+        return self._reproducir_por_rec(self.cabeza, criterio, valor)
+
     def obtener_actual(self):
         if self.actual:
             return self.actual.dato
         return None
     
-    def __init__(self, nombre):
-        self.nombre = nombre
-        self.cabeza = None
-        self.cola = None
-        self.actual = None
-        self._cantidad = 0
-
     def esta_vacia(self):
         return self.cabeza is None
+
+    # Insertar final (versión usando cola es O(1), pero recursiva por ejercicio)
+    # Si usamos recursión pura sin cola:
+    def _insertar_final_rec(self, nodo, nuevo):
+        if nodo.siguiente is None:
+            nodo.siguiente = nuevo
+            nuevo.anterior = nodo
+            self.cola = nuevo # Actualizamos cola
+            return
+        self._insertar_final_rec(nodo.siguiente, nuevo)
 
     def insertar_final(self, cancion):
         nuevo = Node(cancion)
@@ -105,9 +111,11 @@ class ListaDoble:
             self.cola = nuevo
             self.actual = nuevo
         else:
-            nuevo.anterior = self.cola
-            self.cola.siguiente = nuevo
-            self.cola = nuevo
+            # Opción 1: Usar recursión para llegar al final
+            self._insertar_final_rec(self.cabeza, nuevo)
+            # Opción 2: Usar self.cola directo (más eficiente, pero menos "recursivo")
+            # Para fines educativos:
+            pass
         self._cantidad += 1
 
     def insertar_inicio(self, cancion):
@@ -122,55 +130,72 @@ class ListaDoble:
             self.cabeza = nuevo
         self._cantidad += 1
 
+    def _insertar_pos_rec(self, nodo, cancion, indice_actual, indice_objetivo):
+        if indice_actual == indice_objetivo:
+            nuevo = Node(cancion)
+            anterior = nodo.anterior
+            anterior.siguiente = nuevo
+            nuevo.anterior = anterior
+            nuevo.siguiente = nodo
+            nodo.anterior = nuevo
+            return
+        if nodo.siguiente:
+            self._insertar_pos_rec(nodo.siguiente, cancion, indice_actual + 1, indice_objetivo)
+
     def insertar_en_posicion(self, cancion, posicion):
         if posicion <= 0:
             self.insertar_inicio(cancion)
-        elif posicion >= self._cantidad:
+        elif posicion >= self.cantidad(): # Usamos cantidad recursiva
             self.insertar_final(cancion)
         else:
-            nuevo = Node(cancion)
-            actual = self.cabeza
-            for _ in range(posicion):
-                actual = actual.siguiente
-            anterior = actual.anterior
-            anterior.siguiente = nuevo
-            nuevo.anterior = anterior
-            nuevo.siguiente = actual
-            actual.anterior = nuevo
+            # Buscar recursivamente la posición
+            # Empezamos en índice 0 (cabeza)
+            # Queremos insertar UNTES del nodo en 'posicion'
+            self._insertar_pos_rec(self.cabeza, cancion, 0, posicion)
             self._cantidad += 1
 
+    def _eliminar_rec(self, nodo, nombre):
+        if not nodo:
+            return False
+        if nodo.dato.nombre.lower() == nombre.lower():
+            # Eliminar nodo
+            if nodo.anterior:
+                nodo.anterior.siguiente = nodo.siguiente
+            else:
+                self.cabeza = nodo.siguiente
+            
+            if nodo.siguiente:
+                nodo.siguiente.anterior = nodo.anterior
+            else:
+                self.cola = nodo.anterior
+            return True
+        return self._eliminar_rec(nodo.siguiente, nombre)
+
     def eliminar_por_nombre(self, nombre):
-        actual = self.cabeza
-        while actual:
-            if actual.dato.nombre.lower() == nombre.lower():
-                if actual.anterior:
-                    actual.anterior.siguiente = actual.siguiente
-                else:
-                    self.cabeza = actual.siguiente
-                if actual.siguiente:
-                    actual.siguiente.anterior = actual.anterior
-                else:
-                    self.cola = actual.anterior
-                return True
-            actual = actual.siguiente
-        self._cantidad -= 1
-        return False
+        exito = self._eliminar_rec(self.cabeza, nombre)
+        if exito:
+            self._cantidad -= 1
+        return exito
+
+    def _buscar_rec(self, nodo, nombre):
+        if not nodo:
+            return None
+        if nodo.dato.nombre.lower() == nombre.lower():
+            return nodo.dato
+        return self._buscar_rec(nodo.siguiente, nombre)
 
     def buscar(self, nombre):
-        while self.actual:
-            if self.actual.dato.nombre.lower() == nombre.lower():
-                return self.actual.dato
-            self.actual = self.actual.siguiente
-        return None
+        return self._buscar_rec(self.cabeza, nombre)
+
+    def _str_rec(self, nodo):
+        if not nodo:
+            return []
+        return [str(nodo.dato)] + self._str_rec(nodo.siguiente)
 
     def __str__(self):
         if self.esta_vacia():
             return "Lista vacía"
-        elementos = []
-        actual = self.cabeza
-        while actual:
-            elementos.append(str(actual.dato))
-            actual = actual.siguiente
+        elementos = self._str_rec(self.cabeza)
         return "\n".join(elementos)
 
 class Reproductor:
@@ -213,7 +238,7 @@ class InterfazConsola:
 
     def mostrar_menu(self):
         print("\n" + "="*45)
-        print("--- CODEFY MP3 ---")
+        print("--- CODEFY MP3 (RECURSIVO) ---")
         print("="*45)
         print("1. Mostrar canciones")
         print("2. Agregar canción")
@@ -278,9 +303,9 @@ class InterfazConsola:
                     self.reproductor.lista.insertar_inicio(cancion)
                 elif subop == "3":
                     try:
-                        pos = int(input(f"Posición (0 a {self.reproductor.lista._cantidad}): "))
+                        pos = int(input(f"Posición (0 a {self.reproductor.lista.cantidad()}): "))
                     except ValueError:
-                        pos = self.reproductor.lista._cantidad
+                        pos = self.reproductor.lista.cantidad()
                     self.reproductor.lista.insertar_en_posicion(cancion, pos)
                 else:
                     self.reproductor.lista.insertar_final(cancion)
@@ -365,6 +390,11 @@ class InterfazConsola:
             elif opcion == "0":
                 print("\n¡Hasta luego! Gracias por usar Codefy.")
                 break
+
+            elif opcion == "99": # Depuración
+                print(f"Cola apunta a: {self.reproductor.lista.cola.dato if self.reproductor.lista.cola else 'None'}")
+                print(f"Cabeza apunta a: {self.reproductor.lista.cabeza.dato if self.reproductor.lista.cabeza else 'None'}")
+
 
             else:
                 print("Opción no válida.")
