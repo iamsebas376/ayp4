@@ -1,20 +1,20 @@
-def binary_search(arr, low, high, x):
-    if high >= low:
-        mid = (high + low) // 2
-        if arr[mid] == x:
-            return mid
-        elif arr[mid] > x:
-            return binary_search(arr, low, mid - 1, x)
+def busqueda_binaria(lista, inicio, final, n):
+    if final >= inicio:
+        mitad = (inicio + final) // 2
+        if lista[mitad] == n:
+            return mitad
+        elif lista[mitad] > n:
+            return busqueda_binaria(lista, inicio, mitad - 1, n)
         else:
-            return binary_search(arr, mid + 1, high, x)
+            return busqueda_binaria(lista, mitad + 1, final, n)
     else:
         return -1
 
 
 lista = [1, 5, 7, 12, 15]
-numero = binary_search(lista, 0, 5, 12)
+numero = busqueda_binaria(lista, 0, 5, 12)
 
 if numero != -1:
-    print("El número está en la posición: ", str(numero))
+    print("El número está en la posición: ", str(numero + 1))
 else:
     print("El número no está en la lista")
