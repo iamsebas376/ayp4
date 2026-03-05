@@ -19,7 +19,7 @@ class pila:
 
     def pop(self):
         if self.esta_vacia():
-            raise Exception("La pila está vacía")
+            return None
         else:
             dato = self.tope.dato
             self.tope = self.tope.siguiente
@@ -32,8 +32,9 @@ class pila:
         else:
             raise Exception("La pila está vacía")
 
+    @staticmethod
     def evaluar_expresion(expresion):
-        pila = pila()
+        pila_inst = pila()
         tokens = expresion.split()
 
         operadores = {
@@ -45,3 +46,21 @@ class pila:
             "%": lambda a, b: a % b,
             "**": lambda a, b: a ** b
         }
+
+        for token in tokens:
+            if token.lstrip("-").replace(".", "").isdigit():
+                pila_inst.push(float(token))
+            elif token in operadores:
+                b = pila_inst.pop()
+                a = pila_inst.pop()
+                resultado = operadores[token](a, b)
+                pila_inst.push(resultado)
+            else:
+                raise Exception(f"Token no reconocido: {token}")
+        return pila_inst.pop()
+    
+# Ejemplo de uso
+if __name__ == "__main__":
+    expresion = "3 4 + 2 * 7 -"
+    resultado = pila.evaluar_expresion(expresion)
+    print(f"El resultado de la expresión '{expresion}' es: {resultado}")
